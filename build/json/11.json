@@ -1,0 +1,44 @@
+{
+  "name": "Cows.Nose.id #11",
+  "description": "CowsNoseID is a collection of 10000 generated pictures. A collection of cows that change their images and moods inspired by the thought of the right to choose and emotions in everything. Today you can be sad or cheerful, a doctor or think a lot about money. Created by 2022 in Ukraine.",
+  "image": "ipfs://NewUriToReplace/11.png",
+  "dna": "9fd3379076b2cf61baed8edeab37bb1a585d6540",
+  "edition": 11,
+  "date": 1668865777266,
+  "creator": "Denys Daneliuk",
+  "attributes": [
+    {
+      "trait_type": "Background",
+      "value": "Aquamarine"
+    },
+    {
+      "trait_type": "Skin",
+      "value": "Milk"
+    },
+    {
+      "trait_type": "Nose",
+      "value": "White"
+    },
+    {
+      "trait_type": "Hairstyle",
+      "value": "Roses"
+    },
+    {
+      "trait_type": "Сlothes",
+      "value": "Casual"
+    },
+    {
+      "trait_type": "Mouth",
+      "value": "Disappointed"
+    },
+    {
+      "trait_type": "Accessories",
+      "value": "Gold earring"
+    },
+    {
+      "trait_type": "Eyes",
+      "value": "Nasty"
+    }
+  ],
+  "compiler": "Cows Art Engine"
+}
