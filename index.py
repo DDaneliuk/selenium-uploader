@@ -13,15 +13,9 @@ from os.path import exists
 import json
 import time
 import config
+from pathlib import Path
 
-# TODO: check if metamask launch
-
-# content folders 
-img_dir = os.path.abspath("build/images")
-json_dir = os.path.abspath("build/json")
-
-start_index = 0
-files_range = 0
+BLUE, RED, WHITE, YELLOW, MAGENTA, GREEN, END = '\33[94m', '\033[91m', '\33[97m', '\33[93m', '\033[1;35m', '\033[1;32m', '\033[0m'
 
 def setup():
     # set up uploader
@@ -34,7 +28,7 @@ def setup():
     else:
         sys.exit('[-] No your file in directory. Check your files')
 
-def login_meta(driver):
+def login_meta():
     print('[+] Start login')
     time.sleep(5)
     driver.switch_to.window(driver.window_handles[1])
@@ -75,7 +69,7 @@ def login_meta(driver):
     driver.find_element(By.XPATH, '//button[text()="All done"]').click()
     print('[+] Login successful!')
 
-def open_web(driver, wait, web_target_main):
+def open_web(wait, web_target_main):
     # open opensea
     driver.get(web_target_main)
 
@@ -89,7 +83,7 @@ def open_web(driver, wait, web_target_main):
     wait.until(EC.number_of_windows_to_be(2))
 
     # Loop through until we find a new window handle
-    go_original_window(driver, original_window)
+    go_original_window(original_window)
 
     time.sleep(5)
     driver.find_element(By.XPATH, '//button[text()="Next"]').click()
@@ -105,7 +99,7 @@ def open_web(driver, wait, web_target_main):
     wait.until(EC.number_of_windows_to_be(2))
 
     # Loop through until we find a new window handle
-    go_original_window(driver, original_window)
+    go_original_window(original_window)
 
     time.sleep(2)
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -119,7 +113,7 @@ def open_web(driver, wait, web_target_main):
     driver.switch_to.window(original_window)
 
 # upload
-def upload_form(driver, img, info, index):
+def upload_form(img, info, index):
     # final obj for upload
     img_obj = {
         "img": img,
@@ -178,26 +172,49 @@ def upload_form(driver, img, info, index):
     prop_fields_key = driver.find_elements(By.CSS_SELECTOR, '[aria-label="Close"]')
     driver.get('https://opensea.io/asset/create')
 
-def upload(driver, img_dir, json_dir):
+def upload(img_dir, json_dir):
     file_counter=start_index
 
     for index in range(files_range):
         print(f'[+] Start uploading {file_counter}.png')
         img = f"{img_dir}/{file_counter}.png"
         info = f"{json_dir}/{file_counter}.json"
-        upload_form(driver, img, info, file_counter)
+        upload_form(img, info, file_counter)
         file_counter +=1
 
-def go_original_window(driver, original_window):
+def go_original_window(original_window):
     # Loop through until we find a new window handle
     for window_handle in driver.window_handles:
         if window_handle != original_window:
             driver.switch_to.window(window_handle)
             break
 
+def heading():
+    spaces = " " * 98
+    sys.stdout.write(GREEN + spaces + """
+    █ █       █ █   █ █ █ █ █ █   █ █ █ █ █ █ 
+    █ █ █     █ █   █ █               █ █   
+    █ █  █    █ █   █ █               █ █
+    █ █   █   █ █   █ █ █ █ █         █ █
+    █ █     █ █ █   █ █               █ █
+    █ █       █ █   █ █               █ █
+    """ + END + BLUE +
+    '\n' + '{}Upload your awesome nft collection faster{}'.format(BLUE, END).center(60) + '\n' + "")
+
+
 # script's main function
 def main():
+    global img_dir, json_dir, driver
+
     os.system("clear||cls")
+
+    # display heading
+    heading()
+
+    # content folders 
+    img_dir = Path("build/images")
+    json_dir = Path("build/json")
+
     # display heading
     setup()
     # open browser
@@ -217,15 +234,15 @@ def main():
 
     # login into metamask
     try:
-        login_meta(driver)
+        login_meta()
     except:
         print('[-] Login failed. Try again')   
 
-    open_web(driver, wait, web_target_account)    
-    upload(driver, img_dir, json_dir)
+    open_web(wait, web_target_account)    
+    upload(img_dir, json_dir)
 
     print("Session done")
-    time.sleep(100)
+    time.sleep(20)
 
 
 if __name__ == '__main__':
