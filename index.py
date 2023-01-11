@@ -172,7 +172,7 @@ def upload_form(img, info, index):
     prop_fields_key = driver.find_elements(By.CSS_SELECTOR, '[aria-label="Close"]')
     driver.get('https://opensea.io/asset/create')
 
-def upload(img_dir, json_dir):
+def upload():
     file_counter=start_index
 
     for index in range(files_range):
@@ -213,7 +213,9 @@ def main():
 
     # content folders 
     img_dir = Path("build/images")
-    json_dir = Path("build/json")
+    img_dir = img_dir.absolute()
+    json_dir = json_dir = Path("build/json")
+    json_dir.absolute()
 
     # display heading
     setup()
@@ -239,7 +241,7 @@ def main():
         print('[-] Login failed. Try again')   
 
     open_web(wait, web_target_account)    
-    upload(img_dir, json_dir)
+    upload()
 
     print("Session done")
     time.sleep(20)
