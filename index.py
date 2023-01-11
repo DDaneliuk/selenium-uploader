@@ -35,16 +35,18 @@ def setup():
         sys.exit('[-] No your file in directory. Check your files')
 
 def login_meta(driver):
+    print('[+] Start login')
     time.sleep(5)
     driver.switch_to.window(driver.window_handles[1])
     driver.close()
-    time.sleep(2)
     driver.switch_to.window(driver.window_handles[0])
-    driver.find_element(By.XPATH, '//button[text()="Get started"]').click()  
-    print('[+] Start Login ...')
     time.sleep(2)
+    driver.refresh()
+    time.sleep(2)
+    driver.find_element(By.XPATH, '//button[text()="Get started"]').click() 
+    time.sleep(1)
     driver.find_element(By.XPATH, '//button[text()="I agree"]').click()
-    time.sleep(2)
+    time.sleep(1)
     driver.find_element(By.XPATH, '//button[text()="Import wallet"]').click()
     # 12 fields
     driver.find_element(By.ID, "import-srp__srp-word-0").send_keys(config.keys['key1'])
