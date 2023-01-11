@@ -14,7 +14,6 @@ import config
 
 start_index = 0
 files_range = 0
-driver = ""
 
 def setup():
     # set up uploader
@@ -30,9 +29,6 @@ def login_meta(driver):
     driver.close()
     time.sleep(2)
     driver.switch_to.window(driver.window_handles[0])
-    el = WebDriverWait(driver, timeout=3).until(lambda d: d.find_element(By.TAG_NAME,"p"))
-    print(el)
-
     driver.find_element(By.XPATH, '//button[text()="Get started"]').click()  
     print('[+] Start Login ...')
     time.sleep(2)
@@ -197,6 +193,7 @@ def main():
     print('[+] Open browser') 
     EXTENSION_PATH = 'meta.crx'
     options = Options()
+    options.add_experimental_option('prefs', {'intl.accept_languages': 'en,en_US'})
     options.add_extension(EXTENSION_PATH)
 
     driver = webdriver.Chrome(options=options)
@@ -215,7 +212,7 @@ def main():
     try:
         login_meta(driver)
     except:
-        print('Login failed. try')   
+        print('[-] Login failed. Try again')   
 
     open_web(driver, wait, web_target_account)    
     upload(driver, img_dir, json_dir)
