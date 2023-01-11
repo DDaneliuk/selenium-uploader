@@ -8,9 +8,17 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 import os
+import sys
+from os.path import exists
 import json
 import time
 import config
+
+# TODO: check if metamask launch
+
+# content folders 
+img_dir = os.path.abspath("build/images")
+json_dir = os.path.abspath("build/json")
 
 start_index = 0
 files_range = 0
@@ -18,10 +26,13 @@ files_range = 0
 def setup():
     # set up uploader
     global start_index, files_range
-    start_index = int(input("Введіть номер файлу з якого почати: "))
-    files_range = int(input("Кількість картинок, які хочете завантажити за цикл: "))
-
-    return start_index, files_range
+    start_index = int(input("[?] Введіть номер файлу з якого почати: "))
+    files_range = int(input("[?] Кількість картинок, які хочете завантажити за цикл: "))
+    # check if file exist
+    if exists(f'{img_dir}/{start_index}.png' and f'{json_dir}/{start_index}.json'):
+        print('[+] File is in directory')
+    else:
+        sys.exit('[-] No your file in directory. Check your files')
 
 def login_meta(driver):
     time.sleep(5)
@@ -76,12 +87,9 @@ def open_web(driver, wait, web_target_main):
     wait.until(EC.number_of_windows_to_be(2))
 
     # Loop through until we find a new window handle
-    for window_handle in driver.window_handles:
-        if window_handle != original_window:
-            driver.switch_to.window(window_handle)
-            break
+    go_original_window(driver, original_window)
 
-    time.sleep(15)
+    time.sleep(5)
     driver.find_element(By.XPATH, '//button[text()="Next"]').click()
     time.sleep(2)
     driver.find_element(By.XPATH, '//button[text()="Connect"]').click()
@@ -89,17 +97,13 @@ def open_web(driver, wait, web_target_main):
 
     # switch to origin window
     driver.switch_to.window(original_window)
-    # https://opensea.io/asset/create
     driver.get('https://opensea.io/asset/create')
     time.sleep(5)
     driver.find_element(By.XPATH, '//span[text()="MetaMask"]').click()
+    wait.until(EC.number_of_windows_to_be(2))
 
     # Loop through until we find a new window handle
-    time.sleep(5)
-    for window_handle in driver.window_handles:
-        if window_handle != original_window:
-            driver.switch_to.window(window_handle)
-            break
+    go_original_window(driver, original_window)
 
     time.sleep(2)
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -182,8 +186,13 @@ def upload(driver, img_dir, json_dir):
         upload_form(driver, img, info, file_counter)
         file_counter +=1
 
+def go_original_window(driver, original_window):
+    # Loop through until we find a new window handle
+    for window_handle in driver.window_handles:
+        if window_handle != original_window:
+            driver.switch_to.window(window_handle)
+            break
 
-    
 # script's main function
 def main():
     os.system("clear||cls")
@@ -203,10 +212,6 @@ def main():
 
     # web structure
     web_target_account = config.opensea['account']
-
-    # content folders 
-    img_dir = os.path.abspath("build/images")
-    json_dir = os.path.abspath("build/json")
 
     # login into metamask
     try:
