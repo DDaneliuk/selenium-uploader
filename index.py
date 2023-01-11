@@ -190,15 +190,16 @@ def upload(driver, img_dir, json_dir):
     
 # script's main function
 def main():
+    os.system("clear||cls")
     # display heading
     setup()
     # open browser
     print('[+] Open browser') 
     EXTENSION_PATH = 'meta.crx'
-    chrome_options = Options()
-    chrome_options.add_extension(EXTENSION_PATH)
+    options = Options()
+    options.add_extension(EXTENSION_PATH)
 
-    driver = webdriver.Chrome(chrome_options=chrome_options)
+    driver = webdriver.Chrome(options=options)
 
     # Setup wait for later
     wait = WebDriverWait(driver, 20)
