@@ -31,16 +31,16 @@ def main():
     driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, "iframe[title='reCAPTCHA']"))
     time.sleep(2)
     driver.find_element(By.ID ,"recaptcha-anchor").click()
-    print('click')
+    print('[+] Click checkbox')
     driver.switch_to.default_content()
     time.sleep(2)
     frame_cather = driver.find_elements(By.TAG_NAME,'iframe')[2]
-    print(frame_cather)
     driver.switch_to.frame(frame_cather)
     time.sleep(2)
     solver = driver.find_element(By.CLASS_NAME, "help-button-holder")
     ac = ActionChains(driver)
     ac.move_to_element(solver).move_by_offset(1, 1).click().perform()
+    print("[+] Click solver icon")
     time.sleep(3)
     check_exists_by_xpath()
     time.sleep(200)
@@ -52,8 +52,8 @@ def check_exists_by_xpath():
     except NoSuchElementException:
         print("Fail")
         return False
-    print("done")
-    return True  
+    print("[+] Solved")
+    return True
 
 if __name__ == '__main__':
     main()
