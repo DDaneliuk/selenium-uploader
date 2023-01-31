@@ -49,11 +49,9 @@ def main():
 def check_exists_by_xpath():
     try:
         driver.find_element(By.CLASS_NAME, "help-button-holder")
+        print("[+] Solved")
     except NoSuchElementException:
         print("Fail")
-        return False
-    print("[+] Solved")
-    return True
 
 if __name__ == '__main__':
     main()

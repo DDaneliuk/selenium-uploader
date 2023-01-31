@@ -6,6 +6,8 @@ from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.common.exceptions import NoSuchElementException
 
 import os
 import sys
@@ -37,7 +39,7 @@ def login_meta():
     time.sleep(2)
     driver.refresh()
     time.sleep(2)
-    driver.find_element(By.XPATH, '//button[text()="Get started"]').click() 
+    driver.find_element(By.XPATH, '//button[text()="Get started"]').click()
     time.sleep(1)
     driver.find_element(By.XPATH, '//button[text()="I agree"]').click()
     time.sleep(1)
@@ -106,7 +108,7 @@ def open_web(wait, web_target_main):
     time.sleep(1)
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     time.sleep(1)
-    driver.find_element(By.XPATH, '//button[text()="Sign"]').click()    
+    driver.find_element(By.XPATH, '//button[text()="Sign"]').click()
     time.sleep(2)
 
     # switch to origin window
@@ -124,10 +126,10 @@ def upload_form(img, info, index):
         img_obj['name'] = data['name']
         img_obj['description'] = data['description']
         img_obj['properties'] = data['attributes']
-        for a in data['attributes']: 
+        for a in data['attributes']:
             pass
 
-    # get fields and fill it 
+    # get fields and fill it
     driver.find_element(By.ID, "media").send_keys(img_obj['img'])
     driver.find_element(By.ID, "name").send_keys(img_obj['name'])
     driver.find_element(By.ID, "description").send_keys(img_obj['description'])
@@ -136,7 +138,7 @@ def upload_form(img, info, index):
     driver.find_element(By.XPATH, '//span[text()="COWS.NOSE.ID."]').click()
     # add properties popup
     driver.find_element(By.CSS_SELECTOR, '[aria-label="Add properties"]').click()
-    time.sleep(1)
+    time.sleep(2)
     driver.find_element(By.XPATH, '//button[text()="Add more"]').click()
     driver.find_element(By.XPATH, '//button[text()="Add more"]').click()
     driver.find_element(By.XPATH, '//button[text()="Add more"]').click()
@@ -146,31 +148,61 @@ def upload_form(img, info, index):
     driver.find_element(By.XPATH, '//button[text()="Add more"]').click()
 
     prop_fields_key = driver.find_elements(By.CSS_SELECTOR, '[aria-label="Provide the property name"]')
-    prop_fields_value = driver.find_elements(By.CSS_SELECTOR, '[aria-label="Provide the property value"]') 
+    prop_fields_value = driver.find_elements(By.CSS_SELECTOR, '[aria-label="Provide the property value"]')
 
-    for idx, f in enumerate(prop_fields_key): 
-        img_properties = list(img_obj['properties'])[idx] 
+    for idx, f in enumerate(prop_fields_key):
+        img_properties = list(img_obj['properties'])[idx]
         prop_key = list(img_properties.values())[0]
         prop_val = list(img_properties.values())[1]
         f.send_keys(prop_key)
         prop_fields_value[idx].send_keys(prop_val)
 
-    # save 
-    driver.find_element(By.XPATH, '//button[text()="Save"]').click()  
+    # save
+    driver.find_element(By.XPATH, '//button[text()="Save"]').click()
 
     # choose chain
-    driver.find_element(By.ID, "chain").click()   
+    driver.find_element(By.ID, "chain").click()
     driver.find_element(By.XPATH, '//span[text()="Polygon"]').click()
 
     # press btn create
     driver.find_element(By.XPATH, '//button[text()="Create"]').click()
+    time.sleep(1)
+    driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, "iframe[title='reCAPTCHA']"))
+    time.sleep(1)
+    driver.find_element(By.ID ,"recaptcha-anchor").click()
+    print('[+] Click checkbox')
+    driver.switch_to.default_content()
+    time.sleep(1)
+    solver_frame = driver.find_element(By.CSS_SELECTOR, "iframe[title='recaptcha challenge expires in two minutes']")
+    driver.switch_to.frame(solver_frame)
+    time.sleep(1)
+    solver = driver.find_element(By.CLASS_NAME, "help-button-holder")
+    ac = ActionChains(driver)
+    ac.move_to_element(solver).move_by_offset(1, 1).click().perform()
+    print("[+] Click solver icon")
+    time.sleep(10)
 
-    time.sleep(35)
+    try:
+        if solver_frame:
+            print ("Element exists!")
+            time.sleep(3)
+    except NoSuchElementException:
+        print('No element')
+
     # addition time for cather
     check_text = f"You Created Cows.Nose.id #{index}!"
 
     prop_fields_key = driver.find_elements(By.CSS_SELECTOR, '[aria-label="Close"]')
     driver.get('https://opensea.io/asset/create')
+
+def check_exists_by_xpath(xpath):
+    try:
+        driver.find_element(xpath)
+    except NoSuchElementException:
+        print('no element')
+        time.sleep(5)
+        return False
+    return True
 
 def upload():
     file_counter=start_index
@@ -192,8 +224,8 @@ def go_original_window(original_window):
 def heading():
     spaces = " " * 98
     sys.stdout.write(GREEN + spaces + """
-    █ █       █ █   █ █ █ █ █ █   █ █ █ █ █ █ 
-    █ █ █     █ █   █ █               █ █   
+    █ █       █ █   █ █ █ █ █ █   █ █ █ █ █ █
+    █ █ █     █ █   █ █               █ █
     █ █  █    █ █   █ █               █ █
     █ █   █   █ █   █ █ █ █ █         █ █
     █ █     █ █ █   █ █               █ █
@@ -211,7 +243,7 @@ def main():
     # display heading
     heading()
 
-    # content folders 
+    # content folders
     img_dir = Path("build/images")
     img_dir = img_dir.absolute()
     json_dir = json_dir = Path("build/json")
@@ -220,11 +252,11 @@ def main():
     # display heading
     setup()
     # open browser
-    print('[+] Open browser') 
-    EXTENSION_PATH = 'meta.crx'
+    print('[+] Open browser')
     options = Options()
     options.add_experimental_option('prefs', {'intl.accept_languages': 'en,en_US'})
-    options.add_extension(EXTENSION_PATH)
+    options.add_extension('meta.crx')
+    options.add_extension('buster.crx')
 
     driver = webdriver.Chrome(options=options)
 
@@ -238,9 +270,9 @@ def main():
     try:
         login_meta()
     except:
-        print('[-] Login failed. Try again')   
+        print('[-] Login failed. Try again')
 
-    open_web(wait, web_target_account)    
+    open_web(wait, web_target_account)
     upload()
 
     print("Session done")
