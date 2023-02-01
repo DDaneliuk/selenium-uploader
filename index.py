@@ -182,26 +182,28 @@ def upload_form(img, info, index):
     print("[+] Click solver icon")
     time.sleep(10)
 
-    try:
-        if solver_frame:
-            print ("Element exists!")
-            time.sleep(3)
-    except NoSuchElementException:
-        print('No element')
-
     # addition time for cather
-    check_text = f"You Created Cows.Nose.id #{index}!"
+    check_text = f"You created Cows.Nose.id #{index}!"
+    check = check_exists_by_xpath(check_text)
+    while check:
+        print('[+] Check again')
+        time.sleep(5)
+        check = check_exists_by_xpath(check_text)
 
-    prop_fields_key = driver.find_elements(By.CSS_SELECTOR, '[aria-label="Close"]')
     driver.get('https://opensea.io/asset/create')
 
-def check_exists_by_xpath(xpath):
+def check_exists_by_xpath(check_text):
     try:
-        driver.find_element(xpath)
-    except NoSuchElementException:
-        print('no element')
-        time.sleep(5)
+        driver.find_element(By.XPATH, '//h4[text()="You created Cows.Nose.id #2167"]')
+        print('[+] Uploaded')
         return False
+    except NoSuchElementException:
+        print('[!] Need refresh for solver')
+        driver.find_element(By.ID, "recaptcha-reload-button").click()
+        time.sleep(2)
+        ac = ActionChains(driver)
+        ac.move_to_element(driver.find_element(By.CLASS_NAME, "help-button-holder")).move_by_offset(1, 1).click().perform()
+        time.sleep(5)
     return True
 
 def upload():
