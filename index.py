@@ -166,7 +166,7 @@ def upload_form(img, info, index):
 
     # press btn create
     driver.find_element(By.XPATH, '//button[text()="Create"]').click()
-    time.sleep(1)
+    time.sleep(2)
     driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, "iframe[title='reCAPTCHA']"))
     time.sleep(1)
     driver.find_element(By.ID ,"recaptcha-anchor").click()
@@ -194,10 +194,10 @@ def upload_form(img, info, index):
 
 def check_exists_by_xpath(check_text):
     try:
-        driver.find_element(By.XPATH, '//h4[text()="You created Cows.Nose.id #2167"]')
+        driver.find_element(By.XPATH, f'//h4[text()="{check_text}"]')
         print('[+] Uploaded')
         return False
-    except NoSuchElementException:
+    except:
         print('[!] Need refresh for solver')
         driver.find_element(By.ID, "recaptcha-reload-button").click()
         time.sleep(2)

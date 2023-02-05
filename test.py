@@ -28,6 +28,12 @@ def main():
 
     driver.get("https://patrickhlauke.github.io/recaptcha/")
     time.sleep(2)
+    # check = check_exists_by_xpath()
+    # while check: 
+    #    print('check again')
+    #    time.sleep(1)
+    #    check = check_exists_by_xpath()
+        
     driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, "iframe[title='reCAPTCHA']"))
     time.sleep(2)
     driver.find_element(By.ID ,"recaptcha-anchor").click()
@@ -35,23 +41,55 @@ def main():
     driver.switch_to.default_content()
     time.sleep(2)
     frame_cather = driver.find_elements(By.TAG_NAME,'iframe')[2]
+
     driver.switch_to.frame(frame_cather)
     time.sleep(2)
-    solver = driver.find_element(By.CLASS_NAME, "help-button-holder")
-    ac = ActionChains(driver)
-    ac.move_to_element(solver).move_by_offset(1, 1).click().perform()
-    print("[+] Click solver icon")
+    print('[+] Press solver')
+    click_solver()
+    print('[+] Check solver')
+    check = check_solver()
+    while check:
+        reload_solver()
+        check = check_solver()
+        
     time.sleep(3)
-    check_exists_by_xpath()
     time.sleep(200)
-    
+
+def click_solver():
+    try:
+        ac = ActionChains(driver)
+        ac.move_to_element(driver.find_element(By.CLASS_NAME, "help-button-holder")).move_by_offset(1, 1).click().perform()
+        time.sleep(7)
+    except NoSuchElementException:
+        print("[+] Error: Activate solver")
+        return True 
+
+def check_solver():
+    try:
+        driver.find_element(By.CLASS_NAME, "help-button-holder")
+        print("[!] Need reload")
+        print(driver.find_element(By.CLASS_NAME, "help-button-holder"))
+        return True
+    except NoSuchElementException:
+        print("[+] Solved")
+        return False    
+
+def reload_solver():
+    try:
+        driver.find_element(By.ID, "recaptcha-reload-button").click()
+        print("[+] Press reload")
+        time.sleep(5)
+    except:
+        print("[-] Error, while reloading")
 
 def check_exists_by_xpath():
     try:
-        driver.find_element(By.CLASS_NAME, "help-button-holder")
-        print("[+] Solved")
+        driver.find_element(By.XPATH, '//h1[text()="test"]')
+        print("[+] Yep")
+        return False
     except NoSuchElementException:
         print("Fail")
+        return True
 
 if __name__ == '__main__':
     main()
