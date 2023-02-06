@@ -15,6 +15,8 @@ from os.path import exists
 import json
 import time
 import config
+import telebot
+from telebot import types
 from pathlib import Path
 
 BLUE, RED, WHITE, YELLOW, MAGENTA, GREEN, END = '\33[94m', '\033[91m', '\33[97m', '\33[93m', '\033[1;35m', '\033[1;32m', '\033[0m'
@@ -138,7 +140,7 @@ def upload_form(img, info, index):
     driver.find_element(By.XPATH, '//span[text()="COWS.NOSE.ID."]').click()
     # add properties popup
     driver.find_element(By.CSS_SELECTOR, '[aria-label="Add properties"]').click()
-    time.sleep(2)
+    time.sleep(3)
     driver.find_element(By.XPATH, '//button[text()="Add more"]').click()
     driver.find_element(By.XPATH, '//button[text()="Add more"]').click()
     driver.find_element(By.XPATH, '//button[text()="Add more"]').click()
@@ -166,8 +168,8 @@ def upload_form(img, info, index):
 
     # press btn create
     driver.find_element(By.XPATH, '//button[text()="Create"]').click()
-    time.sleep(2)
-    driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, "iframe[title='reCAPTCHA']"))
+    time.sleep(3)
+    switch_frame()
     time.sleep(1)
     driver.find_element(By.ID ,"recaptcha-anchor").click()
     print('[+] Click checkbox')
@@ -175,38 +177,54 @@ def upload_form(img, info, index):
     time.sleep(1)
     solver_frame = driver.find_element(By.CSS_SELECTOR, "iframe[title='recaptcha challenge expires in two minutes']")
     driver.switch_to.frame(solver_frame)
-    time.sleep(1)
-    solver = driver.find_element(By.CLASS_NAME, "help-button-holder")
-    ac = ActionChains(driver)
-    ac.move_to_element(solver).move_by_offset(1, 1).click().perform()
-    print("[+] Click solver icon")
-    time.sleep(10)
+    check = click_solver()
 
     # addition time for cather
-    check_text = f"You created Cows.Nose.id #{index}!"
-    check = check_exists_by_xpath(check_text)
     while check:
-        print('[+] Check again')
-        time.sleep(5)
-        check = check_exists_by_xpath(check_text)
+        check = check_solver()
+        reload_solver()
+        click_solver()
 
     driver.get('https://opensea.io/asset/create')
 
-def check_exists_by_xpath(check_text):
+def switch_frame():
     try:
-        driver.find_element(By.XPATH, f'//h4[text()="{check_text}"]')
-        print('[+] Uploaded')
-        return False
+        driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, "iframe[title='reCAPTCHA']"))
     except:
-        print('[!] Need refresh for solver')
-        driver.find_element(By.ID, "recaptcha-reload-button").click()
-        time.sleep(2)
+        print('[-] Switch again')
+        time.sleep(2)    
+        switch_frame()
+
+def click_solver():
+    try:
+        print("[+] Click solver")
         ac = ActionChains(driver)
         ac.move_to_element(driver.find_element(By.CLASS_NAME, "help-button-holder")).move_by_offset(1, 1).click().perform()
+        time.sleep(7)
+        return True
+    except:
+        print("[+] Error: Activate solver")
+        return False
+
+def check_solver():
+    try:
+        driver.find_element(By.CLASS_NAME, "help-button-holder")
+        print("[!] Need reload")
+        return False
+    except NoSuchElementException:
+        print("[+] Solved")
+        return True 
+
+def reload_solver():
+    try:
+        print("[+] Press reload")
+        driver.find_element(By.ID, "recaptcha-reload-button").click()
         time.sleep(5)
-    return True
+    except:
+        print("[-] Error, while reloading")        
 
 def upload():
+    global file_counter
     file_counter=start_index
 
     for index in range(files_range):
@@ -235,13 +253,17 @@ def heading():
     """ + END + BLUE +
     '\n' + '{}Upload your awesome nft collection faster{}'.format(BLUE, END).center(60) + '\n' + "")
 
+def bot_feed(text): 
+    # bot setup
+    bot = telebot.TeleBot(config.bot_token)
+    bot.send_message(config.bot_id, f"{text}")
 
 # script's main function
 def main():
     global img_dir, json_dir, driver
 
     os.system("clear||cls")
-
+    
     # display heading
     heading()
 
@@ -275,9 +297,16 @@ def main():
         print('[-] Login failed. Try again')
 
     open_web(wait, web_target_account)
-    upload()
-
+    try:
+       bot_feed("Start upload")
+       upload()
+    except Exception as e:
+        error = f"Upload failed at: {file_counter} \n ERROR: {e}"
+        bot_feed(error)
+        print(e)
+        
     print("Session done")
+    bot_feed("Session done")
     time.sleep(20)
 
 
