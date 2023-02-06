@@ -256,7 +256,7 @@ def heading():
 def bot_feed(text): 
     # bot setup
     bot = telebot.TeleBot(config.bot_token)
-    bot.send_message(config.bot_id, f"{text}")
+    bot.send_message(config.bot_art, f"{text}")
 
 # script's main function
 def main():
