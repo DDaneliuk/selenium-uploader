@@ -23,42 +23,34 @@ BLUE, RED, WHITE, YELLOW, MAGENTA, GREEN, END = '\33[94m', '\033[91m', '\33[97m'
 
 def setup():
     # set up uploader
-    global start_index, files_range
-    start_index = int(input("[?] Введіть номер файлу з якого почати: "))
+    global file_counter, files_range
+    file_counter = int(input("[?] Введіть номер файлу з якого почати: "))
     files_range = int(input("[?] Кількість картинок, які хочете завантажити за цикл: "))
     # check if file exist
-    if exists(f'{img_dir}/{start_index}.png' and f'{json_dir}/{start_index}.json'):
+    if exists(f'{img_dir}/{file_counter}.png' and f'{json_dir}/{file_counter}.json'):
         print('[+] File is in directory')
     else:
         sys.exit('[-] No your file in directory. Check your files')
 
 def login_meta():
     print('[+] Start login')
-    time.sleep(5)
     driver.switch_to.window(driver.window_handles[1])
     driver.close()
     driver.switch_to.window(driver.window_handles[0])
-    time.sleep(2)
+    time.sleep(1)
     driver.refresh()
-    time.sleep(2)
+    time.sleep(1)
     driver.find_element(By.XPATH, '//button[text()="Get started"]').click()
     time.sleep(1)
     driver.find_element(By.XPATH, '//button[text()="I agree"]').click()
     time.sleep(1)
     driver.find_element(By.XPATH, '//button[text()="Import wallet"]').click()
+    
     # 12 fields
-    driver.find_element(By.ID, "import-srp__srp-word-0").send_keys(config.keys['key1'])
-    driver.find_element(By.ID, "import-srp__srp-word-1").send_keys(config.keys['key2'])
-    driver.find_element(By.ID, "import-srp__srp-word-2").send_keys(config.keys['key3'])
-    driver.find_element(By.ID, "import-srp__srp-word-3").send_keys(config.keys['key4'])
-    driver.find_element(By.ID, "import-srp__srp-word-4").send_keys(config.keys['key5'])
-    driver.find_element(By.ID, "import-srp__srp-word-5").send_keys(config.keys['key6'])
-    driver.find_element(By.ID, "import-srp__srp-word-6").send_keys(config.keys['key7'])
-    driver.find_element(By.ID, "import-srp__srp-word-7").send_keys(config.keys['key8'])
-    driver.find_element(By.ID, "import-srp__srp-word-8").send_keys(config.keys['key9'])
-    driver.find_element(By.ID, "import-srp__srp-word-9").send_keys(config.keys['key10'])
-    driver.find_element(By.ID, "import-srp__srp-word-10").send_keys(config.keys['key11'])
-    driver.find_element(By.ID, "import-srp__srp-word-11").send_keys(config.keys['key12'])
+    key_index=1
+    for index in range(12):
+        driver.find_element(By.ID, f"import-srp__srp-word-{index}").send_keys(config.keys[f'key{key_index}'])
+        key_index+=1
 
     # password
     driver.find_element(By.ID, "password").send_keys(config.password)
@@ -116,8 +108,8 @@ def open_web(wait, web_target_main):
     # switch to origin window
     driver.switch_to.window(original_window)
 
-# upload
 def upload_form(img, info, index):
+    driver.get('https://opensea.io/asset/create')
     # final obj for upload
     img_obj = {
         "img": img,
@@ -128,9 +120,8 @@ def upload_form(img, info, index):
         img_obj['name'] = data['name']
         img_obj['description'] = data['description']
         img_obj['properties'] = data['attributes']
-        for a in data['attributes']:
-            pass
 
+    time.sleep(3)
     # get fields and fill it
     driver.find_element(By.ID, "media").send_keys(img_obj['img'])
     driver.find_element(By.ID, "name").send_keys(img_obj['name'])
@@ -185,8 +176,6 @@ def upload_form(img, info, index):
         reload_solver()
         click_solver()
 
-    driver.get('https://opensea.io/asset/create')
-
 def switch_frame():
     try:
         driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, "iframe[title='reCAPTCHA']"))
@@ -197,23 +186,38 @@ def switch_frame():
 
 def click_solver():
     try:
-        print("[+] Click solver")
-        ac = ActionChains(driver)
-        ac.move_to_element(driver.find_element(By.CLASS_NAME, "help-button-holder")).move_by_offset(1, 1).click().perform()
-        time.sleep(7)
-        return True
+        check_again = check_solver_again()
+        if check_again:
+            print("[+] Click solver")
+            ac = ActionChains(driver)
+            ac.move_to_element(driver.find_element(By.CLASS_NAME, "help-button-holder")).move_by_offset(1, 1).click().perform()
+            time.sleep(7)
+            return True
+        else:     
+            driver.refresh()
     except:
         print("[+] Error: Activate solver")
         return False
 
+def check_solver_again():
+    try:
+        driver.find_element(By.CLASS_NAME, "rc-doscaptcha-header-text")
+        return False
+    except:
+        return True   
+
+
 def check_solver():
     try:
-        driver.find_element(By.CLASS_NAME, "help-button-holder")
-        print("[!] Need reload")
-        return False
+        if driver.current_url != "https://opensea.io/asset/create":
+            return False
+        else:    
+            driver.find_element(By.CLASS_NAME, "help-button-holder")
+            print("[!] Need reload")
+            return True
     except NoSuchElementException:
         print("[+] Solved")
-        return True 
+        return False 
 
 def reload_solver():
     try:
@@ -225,14 +229,17 @@ def reload_solver():
 
 def upload():
     global file_counter
-    file_counter=start_index
 
     for index in range(files_range):
         print(f'[+] Start uploading {file_counter}.png')
         img = f"{img_dir}/{file_counter}.png"
         info = f"{json_dir}/{file_counter}.json"
-        upload_form(img, info, file_counter)
-        file_counter +=1
+        try:
+            upload_form(img, info, file_counter)
+            file_counter +=1
+        except Exception as e:
+            bot_feed(f'{e}\n\n RESTART')
+            print('ERROR', e)  
 
 def go_original_window(original_window):
     # Loop through until we find a new window handle
@@ -256,13 +263,16 @@ def heading():
 def bot_feed(text): 
     # bot setup
     bot = telebot.TeleBot(config.bot_token)
-    bot.send_message(config.bot_art, f"{text}")
+    bot.send_message(config.bot_id, f"{text}")
 
 # script's main function
 def main():
-    global img_dir, json_dir, driver
+    global img_dir, json_dir, driver, error_state, processId
 
     os.system("clear||cls")
+    processId=os.getppid()
+    bot_feed(f'Process ID: {processId}')
+    error_state = 1
     
     # display heading
     heading()
@@ -297,16 +307,25 @@ def main():
         print('[-] Login failed. Try again')
 
     open_web(wait, web_target_account)
-    try:
-       bot_feed("Start upload")
-       upload()
-    except Exception as e:
-        error = f"Upload failed at: {file_counter} \n ERROR: {e}"
-        bot_feed(error)
-        print(e)
-        
-    print("Session done")
-    bot_feed("Session done")
+    
+    while True:
+        if error_state == 50:
+            bot_feed(f"ID: {processId}\nMany Errors: {error_state}")
+            break
+        else:
+            try:
+                bot_feed(f"ID: {processId}\nStart upload")
+                upload()
+            except Exception as e:
+                error_state+=1
+                error = f"ID: {processId}\nUpload failed at: {file_counter} \nERROR: {e}"
+                bot_feed(f'{e}\n\n RESTART')
+                print('ERROR', e)
+            time.sleep(10)
+
+
+    print(f"ID: {processId}\nSession done")
+    bot_feed(f"ID: {processId}\nSession done")
     time.sleep(20)
 
 
