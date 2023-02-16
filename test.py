@@ -55,6 +55,29 @@ def main():
     time.sleep(3)
     time.sleep(200)
 
+def remove_cdc():
+    options = Options()
+    options.add_experimental_option('prefs', {'intl.accept_languages': 'en,en_US'})
+    options.add_argument("--disable-blink-features=AutomationControlled")
+
+    driver = webdriver.Chrome(options=options)
+    driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+        'source': '''
+            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
+            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;
+            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
+        '''
+    })
+
+    try:
+        driver.get('https://anycoindirect.eu')
+        time.sleep(80)
+    except Exception as e:
+        print(e)
+    finally:
+        driver.close()
+        driver.quit()
+
 def click_solver():
     try:
         ac = ActionChains(driver)
@@ -68,7 +91,6 @@ def check_solver():
     try:
         driver.find_element(By.CLASS_NAME, "help-button-holder")
         print("[!] Need reload")
-        print(driver.find_element(By.CLASS_NAME, "help-button-holder"))
         return True
     except NoSuchElementException:
         print("[+] Solved")
@@ -92,4 +114,4 @@ def check_exists_by_xpath():
         return True
 
 if __name__ == '__main__':
-    main()
+    remove_cdc()

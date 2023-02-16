@@ -288,11 +288,19 @@ def main():
     # open browser
     print('[+] Open browser')
     options = Options()
+    options.add_argument("--disable-blink-features=AutomationControlled")
     options.add_experimental_option('prefs', {'intl.accept_languages': 'en,en_US'})
     options.add_extension('meta.crx')
     options.add_extension('buster.crx')
 
     driver = webdriver.Chrome(options=options)
+    driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+        'source': '''
+            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
+            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;
+            delete window.cdc_adoQpoasnfa76pfcZLmcfl_Symbol;
+        '''
+    })
 
     # Setup wait for later
     wait = WebDriverWait(driver, 20)
