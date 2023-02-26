@@ -68,9 +68,5 @@ def main():
 
     check_items(file_range, file)
     
-
-    
-
-
 if __name__ == '__main__':
     main()
