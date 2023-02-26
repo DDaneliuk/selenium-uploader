@@ -1,3 +1,6 @@
+# https://freeproxylists.net/ru/
+ips=['198.46.160.38:8080']
+
 keys = {
     'key1' : 'must',
     'key2' : 'chief',
