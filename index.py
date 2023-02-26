@@ -9,6 +9,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import NoSuchElementException
 
+
 import os
 import sys
 from os.path import exists
@@ -18,19 +19,22 @@ import config
 import telebot
 from telebot import types
 from pathlib import Path
+from control import scan, updater
 
 BLUE, RED, WHITE, YELLOW, MAGENTA, GREEN, END = '\33[94m', '\033[91m', '\33[97m', '\33[93m', '\033[1;35m', '\033[1;32m', '\033[0m'
 
 def setup():
     # set up uploader
-    global file_counter, files_range
-    file_counter = int(input("[?] Введіть номер файлу з якого почати: "))
-    files_range = int(input("[?] Кількість картинок, які хочете завантажити за цикл: "))
+    global upload_array
+    scan_start = int(input("[?] Scan start: "))
+    scan_stop = int(input("[?] Scan stop : "))
+    upload_array = scan(scan_start, scan_stop)
+    print(upload_array)
     # check if file exist
-    if exists(f'{img_dir}/{file_counter}.png' and f'{json_dir}/{file_counter}.json'):
-        print('[+] File is in directory')
-    else:
-        sys.exit('[-] No your file in directory. Check your files')
+    # if exists(f'{img_dir}/{file_counter}.png' and f'{json_dir}/{file_counter}.json'):
+        # print('[+] File is in directory')
+    # else:
+        # sys.exit('[-] No your file in directory. Check your files')
 
 def login_meta():
     print('[+] Start login')
@@ -39,7 +43,7 @@ def login_meta():
     driver.switch_to.window(driver.window_handles[0])
     time.sleep(1)
     driver.refresh()
-    time.sleep(1)
+    time.sleep(3)
     driver.find_element(By.XPATH, '//button[text()="Get started"]').click()
     time.sleep(1)
     driver.find_element(By.XPATH, '//button[text()="I agree"]').click()
@@ -108,7 +112,7 @@ def open_web(wait, web_target_main):
     # switch to origin window
     driver.switch_to.window(original_window)
 
-def upload_form(img, info, index):
+def upload_form(img, info):
     driver.get('https://opensea.io/asset/create')
     # final obj for upload
     img_obj = {
@@ -160,7 +164,7 @@ def upload_form(img, info, index):
     # press btn create
     driver.find_element(By.XPATH, '//button[text()="Create"]').click()
     time.sleep(3)
-    switch_frame()
+    switch_frame_recaptcha()
     time.sleep(1)
     driver.find_element(By.ID ,"recaptcha-anchor").click()
     print('[+] Click checkbox')
@@ -176,40 +180,47 @@ def upload_form(img, info, index):
         reload_solver()
         click_solver()
 
-def switch_frame():
+def switch_frame_recaptcha():
     try:
         driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, "iframe[title='reCAPTCHA']"))
     except:
         print('[-] Switch again')
         time.sleep(2)    
-        switch_frame()
+        switch_frame_recaptcha()
 
 def click_solver():
     try:
-        check_again = check_solver_again()
-        if check_again:
+        is_recaptcha = check_recaptcha()
+        if is_recaptcha:
             print("[+] Click solver")
             ac = ActionChains(driver)
             ac.move_to_element(driver.find_element(By.CLASS_NAME, "help-button-holder")).move_by_offset(1, 1).click().perform()
             time.sleep(7)
             return True
         else:     
+            file_counter -=1
             driver.refresh()
     except:
+        file_counter -=1
         print("[+] Error: Activate solver")
         return False
 
-def check_solver_again():
+def check_recaptcha():
     try:
+        # check if recapher has error "Try again"
         driver.find_element(By.CLASS_NAME, "rc-doscaptcha-header-text")
+        bot_feed(f'Try again. {file_counter}')
+        print(f'Refresh. Try again. {file_counter}')
         return False
     except:
         return True   
 
-
 def check_solver():
     try:
-        if driver.current_url != "https://opensea.io/asset/create":
+        url = driver.current_url
+        if url != "https://opensea.io/asset/create":
+            title = f'Cows.Nose.id #{fileID}'
+            updater(fileID, title, url)
             return False
         else:    
             driver.find_element(By.CLASS_NAME, "help-button-holder")
@@ -228,14 +239,15 @@ def reload_solver():
         print("[-] Error, while reloading")        
 
 def upload():
-    global file_counter
-
-    for index in range(files_range):
-        print(f'[+] Start uploading {file_counter}.png')
-        img = f"{img_dir}/{file_counter}.png"
-        info = f"{json_dir}/{file_counter}.json"
+    global file_counter, fileID
+    file_counter = 0
+    for index in range(len(upload_array)):
+        fileID = upload_array[file_counter]
+        print(f'[+] Start uploading: {fileID}')
+        img = f"{img_dir}/{fileID}.png"
+        info = f"{json_dir}/{fileID}.json"
         try:
-            upload_form(img, info, file_counter)
+            upload_form(img, info)
             file_counter +=1
         except Exception as e:
             bot_feed(f'{e}\n\n RESTART')
