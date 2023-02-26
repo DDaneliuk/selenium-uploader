@@ -17,6 +17,7 @@ import json
 import time
 import config
 from pathlib import Path
+import random
 
 def main():
     global driver
@@ -113,5 +114,19 @@ def check_exists_by_xpath():
         print("Fail")
         return True
 
+def check_ip():
+    chrome_options = webdriver.ChromeOptions()
+    proxy = random_proxy()
+    chrome_options.add_argument(f'--proxy-server={proxy}')
+    url = 'https://myexternalip.com/raw'
+    browser = webdriver.Chrome(options=chrome_options)
+    browser.get(url)
+    print(random_proxy())
+    time.sleep(20)
+
+def random_proxy():
+    proxy = random.choice(config.ips)
+    return proxy
+
 if __name__ == '__main__':
-    remove_cdc()
+    check_ip()
