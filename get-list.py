@@ -21,27 +21,45 @@ def check_items(file_range, file):
         except Exception as e:
             print(e)
 
+def get_clones(titles, check_text):
+    clone_array = []
+    for title in titles:
+        if check_text == title.text:
+            clone_array.append(title.text)
+    if len(clone_array) > 1:
+        print(f'[+] Found clone {clone_array}')
+        save_clone(clone_array)
+    else:  
+        print(f'[+] No clone {clone_array}')
+        save_clone(clone_array)
+
 def get_element(file):
     try: 
         driver.execute_script("window.scroll(0, 700);")
         try:
-            title = driver.find_element(By.CLASS_NAME, "eNYnCu").text
+            titles = driver.find_elements(By.CLASS_NAME, "eNYnCu")
+            check_text = f'Cows.Nose.id #{file}'
+            get_clones(titles, check_text)
         except:
+            print('no title')
             title = ""    
-        check_text = f'Cows.Nose.id #{file}'
-        print(title)
-        if title == check_text:
-            ac = ActionChains(driver)
-            ac.move_to_element(driver.find_element(By.CLASS_NAME, "eNYnCu")).move_by_offset(1, 1).click().perform()
-            time.sleep(2)
-            url = driver.current_url
-            time.sleep(2)
-        else:
-            url = ""
-        create_csv(file, title, url)
+        
+        # if title == check_text:
+            # ac = ActionChains(driver)
+            # ac.move_to_element(driver.find_element(By.CLASS_NAME, "eNYnCu")).move_by_offset(1, 1).click().perform()
+            # time.sleep(2)
+            # url = driver.current_url
+            # time.sleep(2)
+        # else:
+        #     url = ""
+        # create_csv(file, title, url)
         return True
     except:
         return False
+    
+def save_clone(clone_array):
+    with open("clone.txt","a") as file:
+        file.write(f"{clone_array}\n")
     
 def create_csv(id, title, url):
     with open('nft-list.csv', 'a', newline='') as file:
@@ -63,7 +81,7 @@ def main():
         '''
     })
 
-    file = 7001
+    file = 1
     file_range = 1000
 
     check_items(file_range, file)
