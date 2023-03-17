@@ -44,15 +44,15 @@ def get_element(file):
             print('no title')
             title = ""    
         
-        # if title == check_text:
-            # ac = ActionChains(driver)
-            # ac.move_to_element(driver.find_element(By.CLASS_NAME, "eNYnCu")).move_by_offset(1, 1).click().perform()
-            # time.sleep(2)
-            # url = driver.current_url
-            # time.sleep(2)
-        # else:
-        #     url = ""
-        # create_csv(file, title, url)
+        if title == check_text:
+            ac = ActionChains(driver)
+            ac.move_to_element(driver.find_element(By.CLASS_NAME, "eNYnCu")).move_by_offset(1, 1).click().perform()
+            time.sleep(2)
+            url = driver.current_url
+            time.sleep(2)
+        else:
+            url = ""d
+        create_csv(file, title, url)
         return True
     except:
         return False

@@ -2,36 +2,37 @@ import csv
 from tempfile import NamedTemporaryFile
 import shutil
 
+def scan_one():
+    fileId = ''
+    with open('nft-list.csv') as csv_file:
+        reader = csv.reader(csv_file, delimiter=',')
+        for row in reader:
+            if row[1] == '' and row[2] == '':
+                fileId = row[0] 
+                break
 
-def main():
-    global filename, process_array
+    return fileId           
 
-    filename = 'nft-list.csv'
-    scan_start = 0
-    scan_stop = 5000
-    process_array=[]
+def scan_one_delete():
+    fileId = ''
 
-    #scan(scan_start, scan_stop)
-    #print(len(process_array))
-    updater()
+    with open('clone.csv') as csv_file:
+        reader = csv.reader(csv_file, delimiter=',')
+        for row in reader:
+            if len(row) == 0:
+                continue
+            else:
+                fileId = row[0] 
+                return fileId
 
-
-def scan(start, stop):
+def scan():
     unuploaded_array = []
     with open('nft-list.csv') as csv_file:
         reader = csv.reader(csv_file, delimiter=',')
-        line_count = 0
         for row in reader:
-            if line_count >= start:
-                id = row[0]
-                title = row[1]
-                url = row[2]
-                if title == '' and url == '':
-                    unuploaded_array.append(id)
-            line_count += 1
-            if line_count == stop:
-                break
-    return unuploaded_array        
+            if row[1] == '' and row[2] == '':
+                unuploaded_array.append(row[0])
+    return unuploaded_array     
 
 def updater(id, title, url):
     tempfile = NamedTemporaryFile(mode="w", delete=False)

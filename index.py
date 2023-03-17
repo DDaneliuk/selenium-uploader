@@ -9,7 +9,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import NoSuchElementException
 
-
 import os
 import sys
 from os.path import exists
@@ -19,55 +18,9 @@ import config
 import telebot
 from telebot import types
 from pathlib import Path
-from control import scan, updater
-
-BLUE, RED, WHITE, YELLOW, MAGENTA, GREEN, END = '\33[94m', '\033[91m', '\33[97m', '\33[93m', '\033[1;35m', '\033[1;32m', '\033[0m'
-
-def setup():
-    # set up uploader
-    global upload_array
-    scan_start = int(input("[?] Scan start: "))
-    scan_stop = int(input("[?] Scan stop : "))
-    upload_array = scan(scan_start, scan_stop)
-    print(upload_array)
-    # check if file exist
-    # if exists(f'{img_dir}/{file_counter}.png' and f'{json_dir}/{file_counter}.json'):
-        # print('[+] File is in directory')
-    # else:
-        # sys.exit('[-] No your file in directory. Check your files')
-
-def login_meta():
-    print('[+] Start login')
-    driver.switch_to.window(driver.window_handles[1])
-    driver.close()
-    driver.switch_to.window(driver.window_handles[0])
-    time.sleep(1)
-    driver.refresh()
-    time.sleep(3)
-    driver.find_element(By.XPATH, '//button[text()="Get started"]').click()
-    time.sleep(1)
-    driver.find_element(By.XPATH, '//button[text()="I agree"]').click()
-    time.sleep(1)
-    driver.find_element(By.XPATH, '//button[text()="Import wallet"]').click()
-    
-    # 12 fields
-    key_index=1
-    for index in range(12):
-        driver.find_element(By.ID, f"import-srp__srp-word-{index}").send_keys(config.keys[f'key{key_index}'])
-        key_index+=1
-
-    # password
-    driver.find_element(By.ID, "password").send_keys(config.password)
-    driver.find_element(By.ID, "confirm-password").send_keys(config.password)
-
-    driver.find_element(By.ID, "create-new-vault__terms-checkbox").click()
-
-    # submit
-    driver.find_element(By.XPATH, '//button[text()="Import"]').click()
-
-    time.sleep(5)
-    driver.find_element(By.XPATH, '//button[text()="All done"]').click()
-    print('[+] Login successful!')
+from heading import heading
+from meta_login import login
+from control import scan, scan_one, updater
 
 def open_web(wait, web_target_main):
     # open opensea
@@ -107,24 +60,20 @@ def open_web(wait, web_target_main):
     driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
     time.sleep(1)
     driver.find_element(By.XPATH, '//button[text()="Sign"]').click()
-    time.sleep(2)
+    time.sleep(5)
 
     # switch to origin window
     driver.switch_to.window(original_window)
 
-def upload_form(img, info):
-    driver.get('https://opensea.io/asset/create')
-    # final obj for upload
-    img_obj = {
-        "img": img,
-    }
-    # get all data from json
-    with open(info, "r") as read_file:
-        data = json.load(read_file)
-        img_obj['name'] = data['name']
-        img_obj['description'] = data['description']
-        img_obj['properties'] = data['attributes']
+def switch_frame(target):
+    try:
+        driver.switch_to.frame(target)
+    except:
+        print(f'[-] Cant switch to {target} frame')
 
+def upload(img_obj):
+    print(f'[+] {fileID} start')
+    driver.get('https://opensea.io/asset/create')
     time.sleep(3)
     # get fields and fill it
     driver.find_element(By.ID, "media").send_keys(img_obj['img'])
@@ -164,65 +113,42 @@ def upload_form(img, info):
     # press btn create
     driver.find_element(By.XPATH, '//button[text()="Create"]').click()
     time.sleep(3)
-    switch_frame_recaptcha()
+
+    # recaptcha
+    frame_recaptcha = driver.find_element(By.CSS_SELECTOR, "iframe[title='reCAPTCHA']")
+    # open frame w/ recaptcha checkbox
+    switch_frame(frame_recaptcha)
     time.sleep(1)
     driver.find_element(By.ID ,"recaptcha-anchor").click()
     print('[+] Click checkbox')
     driver.switch_to.default_content()
     time.sleep(1)
-    solver_frame = driver.find_element(By.CSS_SELECTOR, "iframe[title='recaptcha challenge expires in two minutes']")
-    driver.switch_to.frame(solver_frame)
-    check = click_solver()
+    # open frame w/ recaptcha challenge
+    frame_recaptcha_challenge = driver.find_element(By.CSS_SELECTOR, "iframe[title='recaptcha challenge expires in two minutes']")
+    switch_frame(frame_recaptcha_challenge)
 
-    # addition time for cather
+    # start solve challenge.
+    check = click_solver()
+    # loop until challenge will be solver.
+    # first is check if challenge is.
     while check:
         check = check_solver()
         reload_solver()
+        check_recaptcha()
+        check_web_errors()
         click_solver()
-
-def switch_frame_recaptcha():
-    try:
-        driver.switch_to.frame(driver.find_element(By.CSS_SELECTOR, "iframe[title='reCAPTCHA']"))
-    except:
-        print('[-] Switch again')
-        time.sleep(2)    
-        switch_frame_recaptcha()
-
-def click_solver():
-    try:
-        is_recaptcha = check_recaptcha()
-        if is_recaptcha:
-            print("[+] Click solver")
-            ac = ActionChains(driver)
-            ac.move_to_element(driver.find_element(By.CLASS_NAME, "help-button-holder")).move_by_offset(1, 1).click().perform()
-            time.sleep(7)
-            return True
-        else:     
-            file_counter -=1
-            driver.refresh()
-    except:
-        file_counter -=1
-        print("[+] Error: Activate solver")
-        return False
-
-def check_recaptcha():
-    try:
-        # check if recapher has error "Try again"
-        driver.find_element(By.CLASS_NAME, "rc-doscaptcha-header-text")
-        bot_feed(f'Try again. {file_counter}')
-        print(f'Refresh. Try again. {file_counter}')
-        return False
-    except:
-        return True   
 
 def check_solver():
     try:
         url = driver.current_url
         if url != "https://opensea.io/asset/create":
             title = f'Cows.Nose.id #{fileID}'
+            print(f'[+] {fileID} uploaded')
             updater(fileID, title, url)
             return False
-        else:    
+        else:   
+            # if recaptcha challenge still unsolver reload recaptcha
+            # And try solve again
             driver.find_element(By.CLASS_NAME, "help-button-holder")
             print("[!] Need reload")
             return True
@@ -234,24 +160,70 @@ def reload_solver():
     try:
         print("[+] Press reload")
         driver.find_element(By.ID, "recaptcha-reload-button").click()
-        time.sleep(5)
+        time.sleep(3)
     except:
-        print("[-] Error, while reloading")        
+        print("[-] Error, while try to reload")
 
-def upload():
-    global file_counter, fileID
-    file_counter = 0
-    for index in range(len(upload_array)):
-        fileID = upload_array[file_counter]
-        print(f'[+] Start uploading: {fileID}')
-        img = f"{img_dir}/{fileID}.png"
-        info = f"{json_dir}/{fileID}.json"
-        try:
-            upload_form(img, info)
-            file_counter +=1
-        except Exception as e:
-            bot_feed(f'{e}\n\n RESTART')
-            print('ERROR', e)  
+def click_solver():
+    try:
+        print("[+] Click solver")
+        ac = ActionChains(driver)
+        ac.move_to_element(driver.find_element(By.CLASS_NAME, "help-button-holder")).move_by_offset(1, 1).click().perform()
+        time.sleep(7)
+        return True
+    except:
+        print("[-] Error: While try click solver")
+        return False
+
+def check_recaptcha():
+    try:
+        # check if recapher has error "Try again"
+        driver.find_element(By.CLASS_NAME, "rc-doscaptcha-header-text")
+        print(f'[+] Refresh. Try again. {fileID}')
+        updater(fileID, '', '')
+        driver.refresh()
+        return False
+    except:
+        return True   
+
+def check_web_errors():
+    try:
+        driver.find_element(By.CLASS_NAME, "AssetForm-status-error")
+        print("[-] Web error")    
+        driver.find_element(By.XPATH, '//button[text()="Create"]').click()
+        time.sleep(3)
+
+        # recaptcha
+        frame_recaptcha = driver.find_element(By.CSS_SELECTOR, "iframe[title='reCAPTCHA']")
+        # open frame w/ recaptcha checkbox
+        switch_frame(frame_recaptcha)
+        time.sleep(1)
+        driver.find_element(By.ID ,"recaptcha-anchor").click()
+        print('[+] Click checkbox')
+        driver.switch_to.default_content()
+        time.sleep(1)
+        # open frame w/ recaptcha challenge
+        frame_recaptcha_challenge = driver.find_element(By.CSS_SELECTOR, "iframe[title='recaptcha challenge expires in two minutes']")
+        switch_frame(frame_recaptcha_challenge)
+    except:
+        print('[+] No Web errors')
+        return True
+
+# create final obj to upload
+def get_file_obj():
+    img = f"{img_dir}/{fileID}.png"
+    info = f"{json_dir}/{fileID}.json"
+    img_obj = {
+        "img": img,
+    }
+    # get all data from json
+    with open(info, "r") as read_file:
+        data = json.load(read_file)
+        img_obj['name'] = data['name']
+        img_obj['description'] = data['description']
+        img_obj['properties'] = data['attributes']
+
+    return img_obj    
 
 def go_original_window(original_window):
     # Loop through until we find a new window handle
@@ -260,17 +232,6 @@ def go_original_window(original_window):
             driver.switch_to.window(window_handle)
             break
 
-def heading():
-    spaces = " " * 98
-    sys.stdout.write(GREEN + spaces + """
-    █ █       █ █   █ █ █ █ █ █   █ █ █ █ █ █
-    █ █ █     █ █   █ █               █ █
-    █ █  █    █ █   █ █               █ █
-    █ █   █   █ █   █ █ █ █ █         █ █
-    █ █     █ █ █   █ █               █ █
-    █ █       █ █   █ █               █ █
-    """ + END + BLUE +
-    '\n' + '{}Upload your awesome nft collection faster{}'.format(BLUE, END).center(60) + '\n' + "")
 
 def bot_feed(text): 
     # bot setup
@@ -279,24 +240,18 @@ def bot_feed(text):
 
 # script's main function
 def main():
-    global img_dir, json_dir, driver, error_state, processId
+    global img_dir, json_dir, driver, error_state, processId, fileID
 
-    os.system("clear||cls")
     processId=os.getppid()
-    bot_feed(f'Process ID: {processId}')
     error_state = 1
     
     # display heading
     heading()
 
     # content folders
-    img_dir = Path("build/images")
-    img_dir = img_dir.absolute()
-    json_dir = json_dir = Path("build/json")
-    json_dir.absolute()
+    img_dir = (Path("build/images")).absolute()
+    json_dir = (Path("build/json")).absolute()
 
-    # display heading
-    setup()
     # open browser
     print('[+] Open browser')
     options = Options()
@@ -321,26 +276,28 @@ def main():
     web_target_account = config.opensea['account']
 
     # login into metamask
-    try:
-        login_meta()
-    except:
-        print('[-] Login failed. Try again')
+    login(driver)
 
     open_web(wait, web_target_account)
-    
+
     while True:
         if error_state == 50:
             bot_feed(f"ID: {processId}\nMany Errors: {error_state}")
             break
         else:
             try:
-                bot_feed(f"ID: {processId}\nStart upload")
-                upload()
+                fileID = scan_one()
+                if fileID:
+                    # set status to img
+                    updater(fileID, 'uploading', 'uploading')
+                    img_obj = get_file_obj()
+                    upload(img_obj)
+                else:
+                    print('No files to upload. Break')   
+                    break
             except Exception as e:
                 error_state+=1
-                error = f"ID: {processId}\nUpload failed at: {file_counter} \nERROR: {e}"
-                bot_feed(f'{e}\n\n RESTART')
-                print('ERROR', e)
+                print(f'ID: {processId}, {e}')
             time.sleep(10)
 
 
